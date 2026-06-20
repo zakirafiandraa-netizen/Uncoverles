@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
-import { createRoom, joinRoom, leaveRoom } from "../rooms/roomManager.js";
+import { createRoom, joinRoom, leaveRoom, startGame } from "../rooms/roomManager.js";
 import type { Player } from "../types/game.js";
+import { getCategories } from "../rooms/wordManager.js";
 
 export function registerGameHandlers(io: Server, socket: Socket) {
     socket.on("room:create", (playerName: string) => {
@@ -46,5 +47,32 @@ export function registerGameHandlers(io: Server, socket: Socket) {
                 io.to(roomCode).emit("room:updated", updatedRoom);
             }
         });
+    });
+
+    socket.on("game:start", (data: { code: string, category?: string }) => {
+        const room = startGame(data.code, data.category);
+        if (!room) {
+            socket.emit("room:error", "Could not start game.");
+            return;
+        }
+
+        room.players.forEach((player) => {
+            io.to(player.id).emit("game:started", {
+                category: room.category,
+                role: player.role,
+                word: player.word
+            });
+        });
+
+        io.to(room.code).emit("room:updated", {
+            ...room,
+            civilianWord: undefined,
+            undercoverWord: undefined,
+            players: room.players.map((p) => ({ ...p, word: undefined, role: undefined })),
+        });
+    });
+
+    socket.on("game:getCategories", () => {
+        socket.emit("game:categories", getCategories());
     });
 }

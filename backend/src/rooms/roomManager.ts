@@ -1,4 +1,5 @@
 import type { Room, Player } from "../types/game.js";
+import { getRandomPair, getCategories } from "./wordManager.js"
 
 const rooms: Map<string, Room> = new Map();
 function generateRoomCode(): string {
@@ -19,6 +20,7 @@ export function createRoom(hostPlayer: Omit<Player, "isHost" | "score">): Room {
         status: "Waiting"
     };
     rooms.set(code, room);
+    console.log(`Room created: ${code}`);
     return room;
 }
 
@@ -43,6 +45,7 @@ export function leaveRoom(code: string, playerId: string): Room | null {
     room.players = room.players.filter((p) => p.id !== playerId);
     if (room.players.length == 0) {
         rooms.delete(code);
+        console.log(`Room deleted: ${code}`);
         return null;
     }
     if (!room.players.find((p) => p.isHost)) {
@@ -53,4 +56,31 @@ export function leaveRoom(code: string, playerId: string): Room | null {
 
 export function getRoom(code: string): Room | undefined {
     return rooms.get(code);
+}
+
+export function startGame(code: string, category?: string): Room | null {
+    const room = rooms.get(code);
+    if (!room || room.status !== "Waiting") return null;
+    if (room.players.length < 3) return null;
+
+    const selectedCategory = category ?? getCategories()[
+        Math.floor(Math.random() * getCategories().length)
+    ]!;
+    const pair = getRandomPair(selectedCategory);
+    if (!pair) return null;
+
+    room.status = "In_Game";
+    room.category = selectedCategory;
+    room.civilianWord = pair.main;
+    room.undercoverWord = pair.differential;
+
+    const shuffled = [...room.players].sort(() => Math.random() - 0.5);
+    shuffled[0]!.role = "Undercover";
+    shuffled[0]!.word = pair.differential;
+    for (let i = 1; i < shuffled.length; i++) {
+        shuffled[i]!.role = "Civilian";
+        shuffled[i]!.word = pair.main;
+    }
+    room.players = shuffled;
+    return room;
 }

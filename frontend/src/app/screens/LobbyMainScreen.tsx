@@ -8,9 +8,9 @@ export default function LobbyMainScreen() {
   const { go, roomCode, players, selectedCategory, setSelectedCategory } = useGame();
   const [copied, setCopied] = useState(false);
 
-  const copy = () => { 
-    setCopied(true); 
-    setTimeout(() => setCopied(false), 2000); 
+  const copy = () => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleLeave = () => {
@@ -23,7 +23,7 @@ export default function LobbyMainScreen() {
       <div className="flex items-center justify-between px-4 lg:px-8 py-3 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <button onClick={handleLeave} className="text-sm text-muted-foreground hover:text-destructive transition-colors">← Leave</button>
         <span className="font-semibold text-sm text-foreground">Game Lobby</span>
-        <button onClick={() => go("lobby-players")} className="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity">Start →</button>
+        <button onClick={() => go("lobby-players")} className="bg-primary text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity">Next →</button>
       </div>
       <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 space-y-5">
         <div className="lg:max-w-xl lg:mx-auto space-y-5">
@@ -46,8 +46,8 @@ export default function LobbyMainScreen() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label:"Players Joined", value:`${players.length} / 8` },
-                { label:"Current Phase", value:"Lobby" }
+                { label: "Players Joined", value: `${players.length} / 8` },
+                { label: "Current Phase", value: "Lobby" }
               ].map((s) => (
                 <div key={s.label} className="bg-muted rounded-xl p-3">
                   <p className="text-xs text-muted-foreground">{s.label}</p>

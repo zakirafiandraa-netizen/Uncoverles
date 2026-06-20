@@ -16,6 +16,9 @@ interface GameState {
   setRoomCode: (code: string) => void;
   chatMessages: ChatMessage[];
   playerId: string;
+  myRole: string;
+  myWord: string;
+  gameCategory: string;
 }
 
 const GameContext = createContext<GameState | null>(null);
@@ -33,6 +36,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [chatMessages] = useState<ChatMessage[]>(DEFAULT_CHAT);
   const [roomCode, setRoomCode] = useState("");
   const [playerId, setPlayerId] = useState("");
+  const [myRole, setMyRole] = useState("");
+  const [myWord, setMyWord] = useState("");
+  const [gameCategory, setGameCategory] = useState("");
 
   const go = useCallback((s: Screen) => setScreen(s), []);
 
@@ -49,16 +55,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
       })));
     };
 
+    const onGameStarted = (data: { category: string; role: string; word: string }) => {
+      setGameCategory(data.category);
+      setMyRole(data.role);
+      setMyWord(data.word);
+    };
+
     socket.on("connect", onConnect);
     socket.on("room:created", onRoomUpdated);
     socket.on("room:joined", onRoomUpdated);
     socket.on("room:updated", onRoomUpdated);
+    socket.on("game:started", onGameStarted);
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("room:created", onRoomUpdated);
       socket.off("room:joined", onRoomUpdated);
       socket.off("room:updated", onRoomUpdated);
+      socket.off("game:started", onGameStarted);
     };
   }, []);
 
@@ -67,8 +81,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     players, setPlayers,
     selectedCategory, setSelectedCategory,
     roomCode, setRoomCode, chatMessages,
-    playerId
-  }), [screen, go, players, selectedCategory, roomCode, chatMessages, playerId]);
+    playerId,
+    myRole, myWord, gameCategory,
+  }), [screen, go, players, selectedCategory, roomCode, chatMessages, playerId, myRole, myWord, gameCategory]);
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
