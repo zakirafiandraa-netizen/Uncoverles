@@ -25,6 +25,7 @@ export const CHAT_MESSAGES: ChatMessage[] = [
 
 export const SCREEN_META: Record<Screen, { title: string; subtitle: string }> = {
   home: { title:"Welcome", subtitle:"Choose your game mode" },
+  guidebook: { title:"Guidebook", subtitle:"Rules, roles, and strategies" },
   "offline-players": { title:"Add Players", subtitle:"Build your team" },
   "offline-category": { title:"Disease Category", subtitle:"Pick a medical theme" },
   "offline-summary": { title:"Game Summary", subtitle:"Review and launch" },

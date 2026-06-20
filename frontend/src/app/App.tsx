@@ -7,6 +7,7 @@ import { pageFade } from "./animations/presets";
 
 // Lazy-load screens for better bundle splitting
 const HomeScreen = React.lazy(() => import("./screens/HomeScreen"));
+const GuidebookScreen = React.lazy(() => import("./screens/GuidebookScreen"));
 const AddPlayersScreen = React.lazy(() => import("./screens/AddPlayersScreen"));
 const CategoryScreen = React.lazy(() => import("./screens/CategoryScreen"));
 const SummaryScreen = React.lazy(() => import("./screens/SummaryScreen"));
@@ -27,6 +28,7 @@ function AppRouter() {
   const renderScreen = () => {
     switch (screen) {
       case "home":               return <HomeScreen />;
+      case "guidebook":          return <GuidebookScreen />;
       case "offline-players":    return <AddPlayersScreen />;
       case "offline-category":   return <CategoryScreen />;
       case "offline-summary":    return <SummaryScreen />;

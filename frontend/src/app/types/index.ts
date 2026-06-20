@@ -1,6 +1,6 @@
 // ── Types ─────────────────────────────────────────────────────────
 export type Screen =
-  | "home" | "offline-players" | "offline-category" | "offline-summary"
+  | "home" | "guidebook" | "offline-players" | "offline-category" | "offline-summary"
   | "online-join" | "lobby-main" | "lobby-players" | "choose-role"
   | "role-revealed" | "discussion" | "voting" | "finalist"
   | "final-submissions" | "game-over";

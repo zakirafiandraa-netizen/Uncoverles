@@ -11,7 +11,7 @@ export default function HomeScreen() {
   const cards = useMemo(() => [
     { icon:<WifiOff className="w-6 h-6"/>, title:"Offline Mode", subtitle:"Play locally with friends in the same room", stats:["2–8 players","No internet"], cta:"Play Offline", bg:"bg-primary", shadow:"hover:shadow-primary/25", screen:"offline-players" as Screen },
     { icon:<Wifi className="w-6 h-6"/>,    title:"Online Mode",  subtitle:"Play with anyone, anywhere in real-time",    stats:["2–10 players","Real-time"],  cta:"Play Online", bg:"bg-[#0891B2]", shadow:"hover:shadow-[#0891B2]/25", badge:"Live", screen:"online-join" as Screen },
-    { icon:<BookOpen className="w-6 h-6"/>,title:"Guidebook",    subtitle:"Learn all the rules, roles, and strategies",  stats:["Full guide","Tips & tricks"], cta:"Read Guide", bg:"bg-[#7C3AED]", shadow:"hover:shadow-[#7C3AED]/25", screen:"home" as Screen },
+    { icon:<BookOpen className="w-6 h-6"/>,title:"Guidebook",    subtitle:"Learn all the rules, roles, and strategies",  stats:["Full guide","Tips & tricks"], cta:"Read Guide", bg:"bg-[#7C3AED]", shadow:"hover:shadow-[#7C3AED]/25", screen:"guidebook" as Screen },
   ], []);
 
   return (
