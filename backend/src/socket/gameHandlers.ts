@@ -1,5 +1,5 @@
 import { Server, Socket } from "socket.io";
-import { createRoom, joinRoom, leaveRoom, startGame, pickCard } from "../rooms/roomManager.js";
+import { createRoom, joinRoom, leaveRoom, startGame, pickCard, getRoom } from "../rooms/roomManager.js";
 import type { Player } from "../types/game.js";
 import { getCategories } from "../rooms/wordManager.js";
 
@@ -92,5 +92,53 @@ export function registerGameHandlers(io: Server, socket: Socket) {
 
     socket.on("game:getCategories", () => {
         socket.emit("game:categories", getCategories());
+    });
+
+    socket.on("chat:send", (data: { roomId: string; type?: string; content?: string; isCritical?: boolean }) => {
+        const room = getRoom(data.roomId);
+        if (!room) return;
+
+        const player = room.players.find(p => p.id === socket.id);
+        const playerName = player ? player.name : "System";
+
+        const chatMessage = {
+            playerId: socket.id,
+            playerName: "System",
+            color: "#EF4444", // System message color
+            message: data.content || `${playerName} sent a system message`,
+            time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            isSystem: true
+        };
+
+        io.to(data.roomId).emit("chat:message", chatMessage);
+    });
+
+    socket.on("chat:message", (data: { roomCode: string, message: string, playerName: string, color: string }) => {
+        const room = getRoom(data.roomCode);
+        if (!room) return;
+
+        const chatMessage = {
+            playerId: socket.id,
+            playerName: data.playerName,
+            color: data.color,
+            message: data.message,
+            time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+        };
+
+        io.to(data.roomCode).emit("chat:message", chatMessage);
+    });
+
+    socket.on("chat:typing", (roomCode: string) => {
+        const room = getRoom(roomCode)
+        if (!room) return;
+
+        socket.to(roomCode).emit("chat:typing", socket.id);
+    });
+
+    socket.on("chat:stop_typing", (roomCode: string) => {
+        const room = getRoom(roomCode);
+        if (!room) return;
+
+        socket.to(roomCode).emit("chat:stop_typing", socket.id);
     });
 }

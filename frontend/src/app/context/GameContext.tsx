@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { Screen, Player, ChatMessage, CardState } from "../types";
-import { COLORS, CHAT_MESSAGES as DEFAULT_CHAT } from "../constants";
+import { COLORS } from "../constants";
 import { socket } from "../services/socket";
 
 // ── Game State ────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [screen, setScreen] = useState<Screen>("home");
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Acak");
-  const [chatMessages] = useState<ChatMessage[]>(DEFAULT_CHAT);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [roomCode, setRoomCode] = useState("");
   const [playerId, setPlayerId] = useState("");
   const [myRole, setMyRole] = useState("");
@@ -62,6 +62,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setGameCategory(data.category);
       setMyRole("");
       setMyWord("");
+      setChatMessages([]);
       setScreen(prev => prev === "choose-role" ? prev : "choose-role");
     };
 
@@ -71,12 +72,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setScreen(prev => prev === "role-revealed" ? prev : "role-revealed");
     };
 
+    const onChatMessage = (msg: any) => {
+      if (msg && typeof msg === "object" && msg.playerName) {
+        setChatMessages(prev => [
+          ...prev,
+          {
+            player: msg.playerName,
+            color: msg.color || "#3B82F6",
+            msg: msg.message,
+            time: msg.time
+          }
+        ]);
+      }
+    };
+
     socket.on("connect", onConnect);
     socket.on("room:created", onRoomUpdated);
     socket.on("room:joined", onRoomUpdated);
     socket.on("room:updated", onRoomUpdated);
     socket.on("game:started", onGameStarted);
     socket.on("game:roleRevealed", onRoleRevealed);
+    socket.on("chat:message", onChatMessage);
 
     return () => {
       socket.off("connect", onConnect);
@@ -85,6 +101,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       socket.off("room:updated", onRoomUpdated);
       socket.off("game:started", onGameStarted);
       socket.off("game:roleRevealed", onRoleRevealed);
+      socket.off("chat:message", onChatMessage);
     };
   }, []);
 

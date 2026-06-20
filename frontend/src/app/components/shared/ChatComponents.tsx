@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MessageCircle, Send } from "lucide-react";
 import { Avatar } from "./Avatar";
 import type { ChatMessage } from "../../types";
@@ -36,7 +37,16 @@ export function ChatSection({ messages }: { messages: ChatMessage[] }) {
 }
 
 // ── Desktop persistent chat sidebar (was duplicated in Discussion + Voting) ──
-export function ChatSidebar({ messages }: { messages: ChatMessage[] }) {
+export function ChatSidebar({ messages, onSendMessage }: { messages: ChatMessage[], onSendMessage?: (msg: string) => void }) {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleSend = () => {
+    if (inputValue.trim() && onSendMessage) {
+      onSendMessage(inputValue.trim());
+      setInputValue("");
+    }
+  };
+
   return (
     <div className="hidden lg:flex flex-col w-[360px] border-l border-border bg-card/50 flex-shrink-0">
       <div className="px-5 py-4 border-b border-border flex items-center gap-2">
@@ -49,11 +59,14 @@ export function ChatSidebar({ messages }: { messages: ChatMessage[] }) {
       <div className="px-5 py-4 border-t border-border">
         <div className="flex gap-2">
           <input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Send a message…"
             className="flex-1 bg-muted rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
             aria-label="Chat message input"
           />
-          <button className="bg-primary text-white p-2 rounded-xl hover:opacity-90 transition-opacity" aria-label="Send message">
+          <button onClick={handleSend} className="bg-primary text-white p-2 rounded-xl hover:opacity-90 transition-opacity" aria-label="Send message">
             <Send className="w-3.5 h-3.5" />
           </button>
         </div>

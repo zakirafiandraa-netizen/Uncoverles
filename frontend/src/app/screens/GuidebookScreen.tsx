@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ArrowLeft, BookOpen, Stethoscope, Users, Clock, Target, AlertTriangle } from "lucide-react";
+import { ArrowLeft, BookOpen, Users, Clock, Target, AlertTriangle } from "lucide-react";
 import { useGame } from "../context/GameContext";
 import { fadeUp, staggerList } from "../animations/presets";
 
@@ -170,16 +170,16 @@ export default function GuidebookScreen() {
             </button>
 
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-[#ECFDF5] flex items-center justify-center flex-shrink-0 shadow-sm">
-                <BookOpen className="w-5 h-5 lg:w-6 lg:h-6 text-[#10B981]" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 flex-shrink-0">
+                <BookOpen className="w-6 h-6 lg:w-7 lg:h-7" />
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
-                Uncoverles Guidebook
-              </h1>
+              <div>
+                <h2 className="text-xl lg:text-2xl font-bold text-foreground">
+                  Diagnostify Guidebook
+                </h2>
+                <p className="text-sm text-muted-foreground mt-0.5">Learn the rules and roles</p>
+              </div>
             </div>
-            <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
-              Master the art of medical diagnosis in multiplayer battles
-            </p>
           </motion.div>
 
           {/* Section 1: Game Overview */}
@@ -189,18 +189,14 @@ export default function GuidebookScreen() {
             animate="animate"
             className="bg-card rounded-2xl p-5 lg:p-6 border border-border shadow-sm"
           >
-            <SectionHeader
-              icon={<Stethoscope className="w-4 h-4" />}
-              iconBg="bg-[#EFF6FF]"
-              iconColor="text-[#3B82F6]"
-              title="Game Overview"
-            />
-            <p className="text-sm lg:text-base text-foreground/80 leading-relaxed">
-              Uncoverles is a competitive multiplayer medical diagnosis game where players
-              take on different medical roles, diagnose diseases, and compete to be the last
-              one standing. The game combines medical knowledge, strategy, and social deduction
-              in an exciting real-time format.
-            </p>
+            <div className="bg-card rounded-2xl p-5 lg:p-6 shadow-sm border border-border">
+              <h3 className="font-bold text-lg text-foreground mb-2">How to Play</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Diagnostify is a competitive multiplayer medical diagnosis game where players 
+                must identify the underlying disease based on the category and their secret word. 
+                Everyone except the Undercover and Mr. White receives the same medical diagnosis word.
+              </p>
+            </div>
             <span className="inline-block mt-4 text-xs font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
               Inspired from Undercover game / Werewolf
             </span>

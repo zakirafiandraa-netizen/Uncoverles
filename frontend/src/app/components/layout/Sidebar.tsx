@@ -39,7 +39,7 @@ export function Sidebar() {
             <Stethoscope className="w-6 h-6 text-white" />
           </div>
           <div>
-            <p className="font-bold text-white text-lg leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>Uncoverles</p>
+            <p className="font-bold text-white text-lg leading-none" style={{ fontFamily: "'DM Sans', sans-serif" }}>Diagnostify</p>
             <p className="text-white/50 text-xs mt-0.5">Medical mystery game</p>
           </div>
         </div>

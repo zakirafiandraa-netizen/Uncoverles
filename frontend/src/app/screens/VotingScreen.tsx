@@ -5,9 +5,12 @@ import { NavBar } from "../components/shared/NavBar";
 import { Avatar } from "../components/shared/Avatar";
 import { InfoBanner } from "../components/shared/InfoBanner";
 import { ChatSection, ChatSidebar } from "../components/shared/ChatComponents";
+import { socket } from "../services/socket";
 
 export default function VotingScreen() {
-  const { go, players, chatMessages } = useGame();
+  const { go, players, chatMessages, roomCode, playerId } = useGame();
+  const currentPlayer = players.find(p => p.id === playerId);
+  const playerName = currentPlayer?.name || "Player";
   const [voted, setVoted] = useState<Set<string>>(new Set());
 
   // Stabilized callback to prevent creating new Set on every render inside the loop
@@ -66,7 +69,19 @@ export default function VotingScreen() {
           <div className="lg:hidden"><ChatSection messages={chatMessages.slice(0, 2)} /></div>
         </div>
 
-        <ChatSidebar messages={chatMessages} />
+        <ChatSidebar
+          messages={chatMessages}
+          onSendMessage={(msg) => {
+            if (roomCode) {
+              socket.emit("chat:message", {
+                roomCode: roomCode,
+                playerName: playerName,
+                color: currentPlayer?.color || "#3B82F6",
+                message: msg,
+              });
+            }
+          }}
+        />
       </div>
 
       <div className="p-4 lg:px-8 border-t border-border bg-card">

@@ -24,7 +24,7 @@ export default function HomeScreen() {
         </motion.div>
         <motion.h1 initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1, duration:0.3 }}
           className="text-2xl lg:text-4xl font-bold text-foreground tracking-tight" style={{ fontFamily:"'DM Sans',sans-serif" }}>
-          Uncoverles
+          Diagnostify
         </motion.h1>
         <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.2, duration:0.3 }}
           className="text-sm lg:text-base text-muted-foreground mt-1.5 text-center max-w-md">
