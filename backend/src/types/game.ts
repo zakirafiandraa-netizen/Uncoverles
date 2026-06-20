@@ -7,11 +7,19 @@ export type Player = {
     word?: string
 };
 
+export type Card = {
+    id: number;
+    role: "Civilian" | "Undercover" | "Mr White";
+    word: string;
+    pickedBy?: string; // playerId
+};
+
 export type Room = {
     code: string,
     players: Player[],
     status: "Waiting" | "In_Game",
     category?: string,
     civilianWord?: string,
-    undercoverWord?: string
+    undercoverWord?: string,
+    cards?: Card[]
 };

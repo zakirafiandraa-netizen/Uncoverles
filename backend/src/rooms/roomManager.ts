@@ -1,4 +1,4 @@
-import type { Room, Player } from "../types/game.js";
+import type { Room, Player, Card } from "../types/game.js";
 import { getRandomPair, getCategories } from "./wordManager.js"
 
 const rooms: Map<string, Room> = new Map();
@@ -58,14 +58,19 @@ export function getRoom(code: string): Room | undefined {
     return rooms.get(code);
 }
 
-export function startGame(code: string, category?: string): Room | null {
+export function startGame(code: string, playerId: string, category?: string): Room | null {
     const room = rooms.get(code);
     if (!room || room.status !== "Waiting") return null;
     if (room.players.length < 3) return null;
 
-    const selectedCategory = category ?? getCategories()[
-        Math.floor(Math.random() * getCategories().length)
-    ]!;
+    const player = room.players.find(p => p.id === playerId);
+    if (!player || !player.isHost) return null;
+
+    let selectedCategory = category;
+    if (!selectedCategory || !getCategories().includes(selectedCategory)) {
+        selectedCategory = getCategories()[Math.floor(Math.random() * getCategories().length)]!;
+    }
+
     const pair = getRandomPair(selectedCategory);
     if (!pair) return null;
 
@@ -74,13 +79,48 @@ export function startGame(code: string, category?: string): Room | null {
     room.civilianWord = pair.main;
     room.undercoverWord = pair.differential;
 
-    const shuffled = [...room.players].sort(() => Math.random() - 0.5);
-    shuffled[0]!.role = "Undercover";
-    shuffled[0]!.word = pair.differential;
-    for (let i = 1; i < shuffled.length; i++) {
-        shuffled[i]!.role = "Civilian";
-        shuffled[i]!.word = pair.main;
+    // Create cards pool
+    const roles: { role: "Civilian" | "Undercover" | "Mr White", word: string }[] = [];
+    roles.push({ role: "Undercover", word: pair.differential });
+    for (let i = 1; i < room.players.length; i++) {
+        roles.push({ role: "Civilian", word: pair.main });
     }
-    room.players = shuffled;
+    
+    // Shuffle roles
+    roles.sort(() => Math.random() - 0.5);
+
+    // Assign to cards
+    room.cards = roles.map((r, index) => ({
+        id: index,
+        role: r.role,
+        word: r.word
+    }));
+
+    // Clear existing roles from players
+    room.players.forEach(p => {
+        delete p.role;
+        delete p.word;
+    });
+
+    return room;
+}
+
+export function pickCard(code: string, playerId: string, cardId: number): Room | null {
+    const room = rooms.get(code);
+    if (!room || room.status !== "In_Game" || !room.cards) return null;
+
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) return null;
+
+    // Player already picked?
+    if (player.role) return null;
+
+    const card = room.cards.find(c => c.id === cardId);
+    if (!card || card.pickedBy) return null;
+
+    card.pickedBy = playerId;
+    player.role = card.role;
+    player.word = card.word;
+
     return room;
 }
