@@ -15,6 +15,7 @@ export function createRoom(hostPlayer: Omit<Player, "isHost" | "score" | "status
         score: 0,
         status: "Alive",
         immuneThisRound: false,
+        connected: true,
     };
     const code = generateRoomCode();
     const room: Room = {
@@ -43,6 +44,7 @@ export function joinRoom(code: string, newPlayer: Omit<Player, "isHost" | "score
         score: 0,
         status: "Alive",
         immuneThisRound: false,
+        connected: true,
     };
 
     room.players.push(player);
@@ -226,7 +228,9 @@ export function applyPrivilege(
     } else if (privilege === "clue_request" && targetId) {
         room.clueRequests.push(targetId);
     } else if (privilege === "points") {
-        // "Take the 15 pts and do nothing extra"
+        // Player chose the points reward — award 15 pts
+        const player = room.players.find(p => p.id === playerId);
+        if (player) player.score += 15;
     }
     return true;
 }
@@ -247,4 +251,51 @@ export function checkWinCondition(code: string): { won: boolean; winners: Player
     }
 
     return { won: false, winners: [] };
+}
+
+export function rejoinRoom(code: string, playerName: string, newSocketId: string): Room | null {
+    const room = rooms.get(code);
+    if (!room) return null;
+
+    const player = room.players.find((p) => p.name === playerName);
+    if (!player) return null;
+
+    const oldSocketId = player.id;
+    player.id = newSocketId;
+    player.connected = true;
+
+    // Swap socket IDs in other structures
+    if (room.cards) {
+        room.cards.forEach(c => {
+            if (c.pickedBy === oldSocketId) c.pickedBy = newSocketId;
+        });
+    }
+
+    const newVotes: Record<string, string> = {};
+    for (const [voter, target] of Object.entries(room.votes)) {
+        const newVoter = voter === oldSocketId ? newSocketId : voter;
+        const newTarget = target === oldSocketId ? newSocketId : target;
+        newVotes[newVoter] = newTarget;
+    }
+    room.votes = newVotes;
+
+    room.immunePlayers = room.immunePlayers.map(id => id === oldSocketId ? newSocketId : id);
+    room.clueRequests = room.clueRequests.map(id => id === oldSocketId ? newSocketId : id);
+
+    const anyRoom = room as any;
+    if (anyRoom._quizAnswered) {
+        anyRoom._quizAnswered = anyRoom._quizAnswered.map((id: string) => id === oldSocketId ? newSocketId : id);
+    }
+    if (anyRoom._cluesSubmitted) {
+        const newSet = new Set<string>();
+        for (const id of anyRoom._cluesSubmitted) {
+            newSet.add(id === oldSocketId ? newSocketId : id);
+        }
+        anyRoom._cluesSubmitted = newSet;
+    }
+    if (anyRoom._firstCorrectId === oldSocketId) {
+        anyRoom._firstCorrectId = newSocketId;
+    }
+
+    return room;
 }

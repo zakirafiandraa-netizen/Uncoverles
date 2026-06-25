@@ -3,6 +3,7 @@ import { Check, Copy, Clock } from "lucide-react";
 import { useGame } from "../context/GameContext";
 import { CATEGORIES } from "../constants";
 import { socket } from "../services/socket";
+import { clearSession } from "../services/session";
 
 export default function LobbyMainScreen() {
   const { go, roomCode, players, selectedCategory, setSelectedCategory, playerId } = useGame();
@@ -22,6 +23,7 @@ export default function LobbyMainScreen() {
 
   const handleLeave = () => {
     if (roomCode) socket.emit("room:leave", roomCode);
+    clearSession();
     go("online-join");
   };
 

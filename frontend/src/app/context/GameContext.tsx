@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { Screen, Player, ChatMessage, CardState, QuizQuestion, WinnerSummary } from "../types";
 import { COLORS } from "../constants";
 import { socket } from "../services/socket";
+import { loadSession, clearSession, saveSession } from "../services/session";
 
 // ── Game State ────────────────────────────────────────────────────
 interface GameState {
@@ -53,7 +54,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState("Acak");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [roomCode, setRoomCode] = useState("");
-  const [playerId, setPlayerId] = useState("");
+  const [playerId, setPlayerId] = useState(() => socket.id || "");
   const [myRole, setMyRole] = useState("");
   const [myWord, setMyWord] = useState("");
   const [gameCategory, setGameCategory] = useState("");
@@ -79,8 +80,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const go = useCallback((s: Screen) => setScreen(prev => prev === s ? prev : s), []);
 
   useEffect(() => {
-    setPlayerId(socket.id || "");
-    const onConnect = () => setPlayerId(socket.id || "");
+    const onConnect = () => {
+      setPlayerId(socket.id || "");
+      const session = loadSession();
+      if (session) {
+        socket.emit("room:rejoin", session.roomCode, session.playerName);
+      }
+    };
 
     // ── Room ──────────────────────────────────────────────────────
     const onRoomUpdated = (room: any) => {
@@ -100,13 +106,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setMyRole("");
       setMyWord("");
       setChatMessages([]);
-      setScreen(prev => prev === "choose-role" ? prev : "choose-role");
+      setScreen("choose-role");
     };
 
     const onRoleRevealed = (data: { role: string; word: string }) => {
       setMyRole(data.role);
       setMyWord(data.word);
-      setScreen(prev => prev === "role-revealed" ? prev : "role-revealed");
+      setScreen("role-revealed");
     };
 
     const onChatMessage = (msg: any) => {
@@ -118,6 +124,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             color: msg.color || "#3B82F6",
             msg: msg.message,
             time: msg.time,
+            isSpectator: msg.isSpectator,
           }
         ]);
       }
@@ -136,12 +143,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setTotalVoters(data.total);
     };
 
-    const onVoteEliminated = (data: { playerId: string; playerName: string; role?: string }) => {
-      setEliminatedPlayer({ id: data.playerId, name: data.playerName, role: data.role });
-      // Update local player status
-      setPlayers(prev => prev.map(p =>
-        p.id === data.playerId ? { ...p, status: "Eliminated" } : p
-      ));
+    const onVoteEliminated = (data: { playerId: string; playerName: string; role?: string } | null) => {
+      if (!data) return;
+
+      setEliminatedPlayer({
+        id: data.playerId,
+        name: data.playerName,
+        role: data.role,
+      });
+
+      setPlayers(prev =>
+        prev.map(p =>
+          p.id === data.playerId
+            ? { ...p, status: "Eliminated" as const }
+            : p
+        )
+      );
     };
 
     const onVoteTied = () => {
@@ -156,6 +173,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setPrivilegeOptions([]);
       setFastestPlayerId(null);
       setScreen("quiz");
+      setTimeout(() => setScreen("quiz"), 1500)
     };
 
     const onQuizResult = (data: { correct: boolean; points: number; hasPrivilege: boolean }) => {
@@ -190,7 +208,42 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // ── Game Over ─────────────────────────────────────────────────
     const onGameWon = (data: { winners: WinnerSummary[] }) => {
       setWinners(data.winners);
+      clearSession();
       setScreen("game-over");
+    };
+
+    // ── Session & Kicks ───────────────────────────────────────────
+    const onRoomRejoined = (data: any) => {
+      setRoomCode(data.code);
+      setPlayers(data.players.map((p: any, i: number) => ({
+        ...p,
+        color: COLORS[i % COLORS.length],
+        avatar: "🧑",
+      })));
+      if (data.cards) setCards(data.cards);
+      if (data.myRole) setMyRole(data.myRole);
+      if (data.myWord) setMyWord(data.myWord);
+      if (data.category) setGameCategory(data.category);
+      if (data.votesCast !== undefined) setVotesCast(data.votesCast);
+      if (data.totalVoters !== undefined) setTotalVoters(data.totalVoters);
+      if (data.currentQuestion) setCurrentQuestion(data.currentQuestion);
+      if (data.round !== undefined) setQuizRound(data.round);
+
+      const session = loadSession();
+      if (session) {
+        setScreen(session.screen);
+      }
+    };
+
+    const onSessionExpired = () => {
+      clearSession();
+      setScreen("session-expired");
+    };
+
+    const onKickedInactivity = () => {
+      clearSession();
+      alert("You have been kicked for inactivity.");
+      setScreen("home");
     };
 
     socket.on("connect", onConnect);
@@ -212,6 +265,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socket.on("round:started", onRoundStarted);
     socket.on("game:won", onGameWon);
     socket.on("clue:requested", onClueRequested);
+    socket.on("room:rejoined", onRoomRejoined);
+    socket.on("session:expired", onSessionExpired);
+    socket.on("kicked:inactivity", onKickedInactivity);
 
     return () => {
       socket.off("connect", onConnect);
@@ -233,8 +289,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
       socket.off("round:started", onRoundStarted);
       socket.off("game:won", onGameWon);
       socket.off("clue:requested", onClueRequested);
+      socket.off("room:rejoined", onRoomRejoined);
+      socket.off("session:expired", onSessionExpired);
+      socket.off("kicked:inactivity", onKickedInactivity);
     };
   }, []);
+
+  useEffect(() => {
+    if (roomCode && playerId && screen !== "home" && screen !== "game-over" && screen !== "session-expired") {
+      const player = players.find(p => p.id === playerId);
+      if (player) {
+        saveSession(roomCode, player.name, screen);
+      }
+    }
+  }, [screen, roomCode, playerId, players]);
 
   const value = useMemo<GameState>(() => ({
     screen, go,

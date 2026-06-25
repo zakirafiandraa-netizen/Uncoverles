@@ -7,6 +7,7 @@ export type Player = {
     word?: string,
     status: PlayerStatus,
     immuneThisRound: boolean,
+    connected?: boolean,
 };
 
 export type PlayerStatus = "Alive" | "Eliminated";

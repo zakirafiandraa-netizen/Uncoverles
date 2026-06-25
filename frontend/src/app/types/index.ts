@@ -3,7 +3,7 @@ export type Screen =
   | "home" | "guidebook" | "offline-players" | "offline-category" | "offline-summary"
   | "online-join" | "lobby-main" | "lobby-players" | "choose-role"
   | "role-revealed" | "discussion" | "voting" | "finalist"
-  | "final-submissions" | "game-over" | "quiz";
+  | "final-submissions" | "game-over" | "quiz" | "session-expired";
 
 export interface Player {
   id: string;
@@ -13,6 +13,7 @@ export interface Player {
   isHost?: boolean;
   role?: "Civilian" | "Undercover" | "Mr White";
   status?: "Alive" | "Eliminated";
+  connected?: boolean;
   score?: number;
   breakdown?: string;
 }
@@ -34,6 +35,7 @@ export interface ChatMessage {
   color: string;
   msg: string;
   time: string;
+  isSpectator?: boolean;
 }
 
 export interface CardState {

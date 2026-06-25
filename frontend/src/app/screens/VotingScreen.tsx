@@ -117,7 +117,8 @@ export default function VotingScreen() {
           messages={chatMessages}
           onSendMessage={(msg) => {
             if (roomCode) {
-              socket.emit("chat:message", {
+              const isSpectator = currentPlayer?.status === "Eliminated";
+              socket.emit(isSpectator ? "spectator:message" : "chat:message", {
                 roomCode,
                 playerName,
                 color: currentPlayer?.color || "#3B82F6",

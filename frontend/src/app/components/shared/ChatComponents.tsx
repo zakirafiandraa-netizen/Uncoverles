@@ -13,6 +13,7 @@ export function ChatMessages({ messages }: { messages: ChatMessage[] }) {
           <div className="flex-1">
             <div className="flex items-baseline gap-2">
               <span className="text-xs font-semibold" style={{ color: m.color }}>{m.player}</span>
+              {m.isSpectator && <span className="text-[10px] bg-muted/50 px-1 rounded text-muted-foreground">👻</span>}
               <span className="text-xs text-muted-foreground">{m.time}</span>
             </div>
             <p className="text-xs text-foreground mt-0.5 leading-relaxed">{m.msg}</p>

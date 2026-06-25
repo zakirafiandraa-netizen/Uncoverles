@@ -34,8 +34,16 @@ function getPositions(
     rx: number,
     ry: number
 ): StickmanPosition[] {
+    if (players.length === 0) return [];
     return players.map((player, i) => {
-        const angle = (2 * Math.PI * i) / players.length - Math.PI / 2;
+        // Distribute players along a semi-circle arc on the top side of the table (from -PI + margin to -margin)
+        const margin = 0.35; // margin to prevent sticking directly to the sides
+        let angle = -Math.PI / 2;
+        if (players.length > 1) {
+            const startAngle = -Math.PI + margin;
+            const endAngle = -margin;
+            angle = startAngle + (i * (endAngle - startAngle)) / (players.length - 1);
+        }
         return {
             x: cx + rx * Math.cos(angle),
             y: cy + ry * Math.sin(angle),
@@ -56,14 +64,14 @@ function getStickmanImage(state: StickmanState): string {
 }
 
 export function RoundTableScene({ players, playerId = "", typingPlayerIds = [], speakingPlayerIds = [] }: RoundTableSceneProps) {
-    const W = 520;
-    const H = 320;
+    const W = 600;
+    const H = 280; // Changed H from 520 to 280 to focus on the top half
     const cx = W / 2;
-    const cy = H / 2 + 10;
-    const tableRx = 130;
-    const tableRy = 70;
-    const orbitRx = tableRx + 80;
-    const orbitRy = tableRy + 80;
+    const cy = H; // Positioned center exactly at the bottom of the viewBox
+    const tableRx = W / 2; // Stretch the table from bottom-left to bottom-right (300px radius)
+    const tableRy = 100; // Vertical radius of the table (controls table perspective)
+    const orbitRx = tableRx - 40; // Horizontal orbit radius (260px to keep players within boundaries)
+    const orbitRy = tableRy - 20; // Vertical orbit radius (80px to place players behind the table)
     const IMG_W = 48;
     const IMG_H = 64;
 
@@ -73,10 +81,49 @@ export function RoundTableScene({ players, playerId = "", typingPlayerIds = [], 
         <div className="w-full flex justify-center items-center">
             <svg
                 viewBox={`0 0 ${W} ${H}`}
-                className="w-full max-w-lg"
-                style={{ height: "280px" }}
+                className="w-full max-w-lg aspect-[600/280]"
+                style={{ height: "auto" }}
                 aria-label="Round table with players"
             >
+                {/* Layer 1: Players' bodies & highlight rings (drawn behind/under the table surface) */}
+                <g id="players-behind-table">
+                    {[...positions]
+                        .sort((a, b) => Math.sin(a.angle) - Math.sin(b.angle))
+                        .map((pos) => {
+                            const imgX = pos.x - IMG_W / 2;
+                            const imgY = pos.y - IMG_H;
+                            const color = pos.player.color ?? "#6366f1";
+
+                            return (
+                                <g key={`body-${pos.player.id}`}>
+                                    {/* Highlight ring for local player */}
+                                    {pos.isMe && (
+                                        <ellipse
+                                            cx={pos.x}
+                                            cy={pos.y - IMG_H / 2}
+                                            rx={IMG_W / 2 + 6}
+                                            ry={IMG_H / 2 + 6}
+                                            fill="none"
+                                            stroke={color}
+                                            strokeWidth={2}
+                                            opacity={0.3}
+                                        />
+                                    )}
+
+                                    {/* Stickman PNG */}
+                                    <image
+                                        href={getStickmanImage(pos.state)}
+                                        x={imgX}
+                                        y={imgY}
+                                        width={IMG_W}
+                                        height={IMG_H}
+                                    />
+                                </g>
+                            );
+                        })}
+                </g>
+
+                {/* Layer 2: Table surface (placed in front of Layer 1 to hide lower bodies) */}
                 {/* Table shadow */}
                 <ellipse cx={cx} cy={cy + 8} rx={tableRx} ry={tableRy * 0.4} fill="rgba(0,0,0,0.07)" />
 
@@ -85,42 +132,17 @@ export function RoundTableScene({ players, playerId = "", typingPlayerIds = [], 
                 <ellipse cx={cx} cy={cy} rx={tableRx - 14} ry={tableRy - 10} fill="none" stroke="#e2e8f0" strokeWidth={1.2} />
 
                 {/* Table label */}
-                <text x={cx} y={cy - 6} textAnchor="middle" fontSize={10} fill="#94a3b8" fontWeight={600} letterSpacing={1.5}>DISCUSSION</text>
-                <text x={cx} y={cy + 10} textAnchor="middle" fontSize={9} fill="#cbd5e1" letterSpacing={0.5}>ROUND TABLE</text>
+                <text x={cx} y={cy - tableRy / 2 - 6} textAnchor="middle" fontSize={10} fill="#94a3b8" fontWeight={600} letterSpacing={1.5}>DISCUSSION</text>
+                <text x={cx} y={cy - tableRy / 2 + 10} textAnchor="middle" fontSize={9} fill="#cbd5e1" letterSpacing={0.5}>ROUND TABLE</text>
 
-                {/* Render back players first, front players on top */}
-                {[...positions]
-                    .sort((a, b) => Math.sin(a.angle) - Math.sin(b.angle))
-                    .map((pos) => {
-                        const imgX = pos.x - IMG_W / 2;
+                {/* Layer 3: Names, speaking & typing indicators (always drawn on top of the table) */}
+                <g id="player-indicators-and-names">
+                    {positions.map((pos) => {
                         const imgY = pos.y - IMG_H;
                         const color = pos.player.color ?? "#6366f1";
 
                         return (
-                            <g key={pos.player.id}>
-                                {/* Highlight ring for local player */}
-                                {pos.isMe && (
-                                    <ellipse
-                                        cx={pos.x}
-                                        cy={pos.y - IMG_H / 2}
-                                        rx={IMG_W / 2 + 6}
-                                        ry={IMG_H / 2 + 6}
-                                        fill="none"
-                                        stroke={color}
-                                        strokeWidth={2}
-                                        opacity={0.3}
-                                    />
-                                )}
-
-                                {/* Stickman PNG */}
-                                <image
-                                    href={getStickmanImage(pos.state)}
-                                    x={imgX}
-                                    y={imgY}
-                                    width={IMG_W}
-                                    height={IMG_H}
-                                />
-
+                            <g key={`info-${pos.player.id}`}>
                                 {/* Speaking indicator bubble */}
                                 {pos.state === "speaking" && (
                                     <circle cx={pos.x + IMG_W / 2} cy={imgY} r={5} fill="#22c55e" />
@@ -134,7 +156,7 @@ export function RoundTableScene({ players, playerId = "", typingPlayerIds = [], 
                                 {/* Player name */}
                                 <text
                                     x={pos.x}
-                                    y={imgY + IMG_H + 14}
+                                    y={imgY - 12}
                                     textAnchor="middle"
                                     fontSize={9}
                                     fontWeight={600}
@@ -146,6 +168,7 @@ export function RoundTableScene({ players, playerId = "", typingPlayerIds = [], 
                             </g>
                         );
                     })}
+                </g>
             </svg>
         </div>
     );

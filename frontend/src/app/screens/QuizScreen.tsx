@@ -7,9 +7,9 @@ import { Avatar } from "../components/shared/Avatar";
 import { socket } from "../services/socket";
 
 const PRIVILEGE_META: Record<string, { icon: React.ReactNode; label: string; description: string; color: string }> = {
-  points:        { icon: <Star className="w-5 h-5" />,    label: "Pass",           description: "Take your 15 points and do nothing extra",  color: "bg-yellow-50 border-yellow-300 text-yellow-700" },
-  immunity:      { icon: <Shield className="w-5 h-5" />,  label: "Immunity",       description: "You cannot be eliminated next round",        color: "bg-green-50 border-green-300 text-green-700" },
-  clue_request:  { icon: <HelpCircle className="w-5 h-5" />, label: "Clue Request", description: "Force another player to reveal a clue",   color: "bg-purple-50 border-purple-300 text-purple-700" },
+  points:        { icon: <Star className="w-5 h-5" />,    label: "Take 15 Points",     description: "Collect 15 bonus points for your score",           color: "bg-yellow-50 border-yellow-300 text-yellow-700" },
+  immunity:      { icon: <Shield className="w-5 h-5" />,  label: "Immunity",           description: "You cannot be eliminated next round",              color: "bg-green-50 border-green-300 text-green-700" },
+  clue_request:  { icon: <HelpCircle className="w-5 h-5" />, label: "Clue Request",   description: "Force another player to reveal a clue next round",  color: "bg-purple-50 border-purple-300 text-purple-700" },
 };
 
 export default function QuizScreen() {
@@ -24,7 +24,6 @@ export default function QuizScreen() {
   const [chosenPrivilege, setChosenPrivilege] = useState<string | null>(null);
   const [clueTargetId, setClueTargetId] = useState<string>("");
 
-  const currentPlayer = players.find(p => p.id === playerId);
   const fastestPlayer = players.find(p => p.id === fastestPlayerId);
   const hasAnswered = quizResult !== null;
   const isMyPrivilege = privilegeOptions.length > 0;
@@ -43,10 +42,6 @@ export default function QuizScreen() {
       privilege,
       targetId: privilege === "clue_request" ? clueTargetId : undefined,
     });
-  };
-
-  const handleEndQuiz = () => {
-    socket.emit("quiz:end", roomCode);
   };
 
   return (
@@ -223,14 +218,11 @@ export default function QuizScreen() {
           </div>
         </div>
 
-        {/* Host ends quiz */}
-        {currentPlayer?.isHost && (
-          <button
-            onClick={handleEndQuiz}
-            className="w-full bg-primary text-white py-3 rounded-xl font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-md shadow-primary/20"
-          >
-            End Quiz → Next Round
-          </button>
+        {/* Waiting indicator — quiz ends automatically */}
+        {hasAnswered && (
+          <p className="text-center text-xs text-muted-foreground animate-pulse py-1">
+            ⏳ Waiting for quiz to end… next round starts automatically.
+          </p>
         )}
       </div>
     </div>

@@ -14,10 +14,11 @@ export default function DiscussionScreen() {
   const [speakingPlayerIds, setSpeakingPlayerIds] = useState<string[]>([]);
 
   useEffect(() => {
-    socket.on("chat:typing", (id: string) => {
+    const onChatTyping = (id: string) => {
       setTypingPlayerIds((prev) => [...new Set([...prev, id])]);
-    });
-    socket.on("chat:message", (msg: any) => {
+    };
+
+    const onChatMessage = (msg: any) => {
       const id = typeof msg === "string" ? msg : msg?.playerId;
       if (!id) return;
       setTypingPlayerIds((prev) => prev.filter((p) => p !== id));
@@ -25,10 +26,14 @@ export default function DiscussionScreen() {
       setTimeout(() => {
         setSpeakingPlayerIds((prev) => prev.filter((p) => p !== id));
       }, 3000);
-    });
+    };
+
+    socket.on("chat:typing", onChatTyping);
+    socket.on("chat:message", onChatMessage);
+
     return () => {
-      socket.off("chat:typing");
-      socket.off("chat:message");
+      socket.off("chat:typing", onChatTyping);
+      socket.off("chat:message", onChatMessage);
     };
   }, []);
 
@@ -38,7 +43,8 @@ export default function DiscussionScreen() {
   // Update your input handler
   const handleSendClue = () => {
     if (clue.trim()) {
-      socket.emit("chat:message", {
+      const isSpectator = currentPlayer?.status === "Eliminated";
+      socket.emit(isSpectator ? "spectator:message" : "chat:message", {
         roomCode: roomCode || "",
         playerName: playerName,
         color: currentPlayer?.color || "#3B82F6",
@@ -48,8 +54,9 @@ export default function DiscussionScreen() {
     }
   };
 
-  // Add typing indicator
+  // Typing indicator — only alive players emit this
   const handleTyping = () => {
+    if (currentPlayer?.status === "Eliminated") return;
     socket.emit("chat:typing", roomCode || "");
   };
 
@@ -61,7 +68,7 @@ export default function DiscussionScreen() {
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden py-2">
             {players.length > 0 ? (
               <RoundTableScene
-                players={players}
+                players={players.filter(p => p.status !== "Eliminated")}
                 playerId={playerId}
                 typingPlayerIds={typingPlayerIds}
 
@@ -107,7 +114,8 @@ export default function DiscussionScreen() {
           messages={chatMessages} 
           onSendMessage={(msg) => {
             if (roomCode) {
-              socket.emit("chat:message", {
+              const isSpectator = currentPlayer?.status === "Eliminated";
+              socket.emit(isSpectator ? "spectator:message" : "chat:message", {
                 roomCode: roomCode,
                 playerName: playerName,
                 color: currentPlayer?.color || "#3B82F6",
@@ -119,14 +127,14 @@ export default function DiscussionScreen() {
       </div>
 
       <div className="p-4 lg:px-8 border-t border-border bg-card">
-        {players.find(p => p.id === playerId)?.isHost ? (
+        {currentPlayer?.status !== "Eliminated" ? (
           <button
             onClick={() => socket.emit("vote:start", roomCode)}
             className="w-full bg-destructive text-white py-3 rounded-xl font-bold hover:opacity-90 active:scale-[0.98] transition-all">
-            Start Voting Phase →
+            Go to Voting Phase →
           </button>
         ) : (
-          <p className="text-center text-sm text-muted-foreground py-2">Waiting for host to start voting…</p>
+          <p className="text-center text-sm text-muted-foreground py-2">You are spectating this round.</p>
         )}
       </div>
     </div>

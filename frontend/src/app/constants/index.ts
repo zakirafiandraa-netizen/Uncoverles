@@ -11,7 +11,7 @@ export const MOCK_PLAYERS: Player[] = [
   { id:"1", name:"Budi",  color:"#0D9488", role:"Civilian",   score:120, breakdown:"3 correct votes + clue quality" },
   { id:"2", name:"Siti",  color:"#8B5CF6", role:"Undercover", score:85,  breakdown:"Undercover — survived 2 rounds" },
   { id:"3", name:"Andi",  color:"#F97316", role:"Civilian",   score:110, breakdown:"2 correct votes + survival bonus" },
-  { id:"4", name:"Dewi",  color:"#EC4899", role:"Mr. White",  score:60,  breakdown:"Mr. White — guessed correctly" },
+  { id:"4", name:"Dewi",  color:"#EC4899", role:"Mr White",  score:60,  breakdown:"Mr. White — guessed correctly" },
   { id:"5", name:"Reza",  color:"#3B82F6", role:"Civilian",   score:95,  breakdown:"1 correct vote + participation" },
 ];
 
@@ -38,4 +38,6 @@ export const SCREEN_META: Record<Screen, { title: string; subtitle: string }> = 
   finalist: { title:"You're a Finalist!", subtitle:"Awaiting final votes" },
   "final-submissions": { title:"Final Round", subtitle:"Review all submissions" },
   "game-over": { title:"Game Over!", subtitle:"Civilian Menang! 🏆" },
+  quiz: { title:"Quiz Time", subtitle:"Answer fast for extra points!" },
+  "session-expired": { title:"Session Ended", subtitle:"You have been disconnected" },
 };
